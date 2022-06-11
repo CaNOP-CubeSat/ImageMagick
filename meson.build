@@ -1,5 +1,5 @@
 project('ImageMagick', 'c', version: '0.0.1')
-meson.override_dependency('ImageMagick-7.0', im_dep)
+
 message('Building ImageMagick (make)')
 r = run_command('./configure', check: true)
 output = r.stdout().strip()
