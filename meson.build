@@ -15,7 +15,7 @@ errortxt = r.stderr().strip()
 
 im_dep = declare_dependency(
     version: meson.project_version(),
-    include_directories : ['MagickCore/.deps', MagickWand/.deps]
+    include_directories : ['MagickCore/.deps', 'MagickWand/.deps']
 )
 
 message('Done with ImageMagick (make)')
