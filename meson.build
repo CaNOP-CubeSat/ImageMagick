@@ -11,4 +11,5 @@ errortxt = r.stderr().strip()
 #r = run_command('make', 'install', check: true)include
 #output = r.stdout().strip()
 #errortxt = r.stderr().strip()
+im_dep = include_directories('.')
 message('Done with ImageMagick (make)')
