@@ -8,14 +8,14 @@ r = run_command('make', '-j', '4', check: true)
 output = r.stdout().strip()
 errortxt = r.stderr().strip()
 
-#message('Installing ImageMagick (make install - needs elevated privileges)')
-#r = run_command('make', 'install', check: true)include
-#output = r.stdout().strip()
-#errortxt = r.stderr().strip()
+message('Installing ImageMagick (make install - must have elevated privileges)')
+r = run_command('make', 'install', check: true)include
+output = r.stdout().strip()
+errortxt = r.stderr().strip()
 
 im_dep = declare_dependency(
     version: meson.project_version(),
     include_directories : ['MagickCore/.deps', 'MagickWand/.deps']
 )
 
-message('Done with ImageMagick (make)')
+message('Finished with ImageMagick (make)')
