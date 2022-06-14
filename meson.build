@@ -9,7 +9,7 @@ output = r.stdout().strip()
 errortxt = r.stderr().strip()
 
 message('Installing ImageMagick (make install - must have elevated privileges)')
-r = run_command('make', 'install', check: true)include
+r = run_command('make', 'install', check: true)
 output = r.stdout().strip()
 errortxt = r.stderr().strip()
 
