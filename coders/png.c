@@ -2749,7 +2749,7 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
             (void) LogMagickEvent(CoderEvent,GetMagickModule(),
               "    Reading PNG iCCP chunk.");
 
-          profile=BlobToStringInfo(info,(const size_t) profile_length);
+          profile=BlobToStringInfo(info,(size_t) profile_length);
 
           if (profile == (StringInfo *) NULL)
           {
@@ -3030,7 +3030,7 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
                    png_get_valid(ping,ping_info,PNG_INFO_bKGD))
                     {
                       png_color_16
-                         background;
+                         background = { 0 };
 
 #ifndef PNG_READ_EMPTY_PLTE_SUPPORTED
                       if (mng_info->have_saved_bkgd_index)

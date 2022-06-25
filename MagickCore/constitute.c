@@ -76,6 +76,7 @@
 #include "MagickCore/string_.h"
 #include "MagickCore/string-private.h"
 #include "MagickCore/timer.h"
+#include "MagickCore/timer-private.h"
 #include "MagickCore/token.h"
 #include "MagickCore/transform.h"
 #include "MagickCore/utility.h"
@@ -721,13 +722,15 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
       /*
         Call appropriate image reader based on image type.
       */
-      if (GetMagickDecoderThreadSupport(magick_info) == MagickFalse)
+      if ((magick_info != (const MagickInfo *) NULL) &&
+          (GetMagickDecoderThreadSupport(magick_info) == MagickFalse))
         LockSemaphoreInfo(magick_info->semaphore);
       status=IsCoderAuthorized(read_info->magick,ReadPolicyRights,exception);
       image=(Image *) NULL;
       if (status != MagickFalse)
         image=decoder(read_info,exception);
-      if (GetMagickDecoderThreadSupport(magick_info) == MagickFalse)
+      if ((magick_info != (const MagickInfo *) NULL) &&
+          (GetMagickDecoderThreadSupport(magick_info) == MagickFalse))
         UnlockSemaphoreInfo(magick_info->semaphore);
     }
   else
@@ -937,6 +940,8 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
         char
           timestamp[MagickTimeExtent];
 
+        (void) FormatMagickTime(next->timestamp,sizeof(timestamp),timestamp);
+        (void) SetImageProperty(next,"date:timestamp",timestamp,exception);
         (void) FormatMagickTime((time_t) GetBlobProperties(next)->st_mtime,
           sizeof(timestamp),timestamp);
         (void) SetImageProperty(next,"date:modify",timestamp,exception);
@@ -1331,12 +1336,14 @@ MagickExport MagickBooleanType WriteImage(const ImageInfo *image_info,
       /*
         Call appropriate image writer based on image type.
       */
-      if (GetMagickEncoderThreadSupport(magick_info) == MagickFalse)
+      if ((magick_info != (const MagickInfo *) NULL) &&
+          (GetMagickEncoderThreadSupport(magick_info) == MagickFalse))
         LockSemaphoreInfo(magick_info->semaphore);
       status=IsCoderAuthorized(write_info->magick,WritePolicyRights,exception);
       if (status != MagickFalse)
         status=encoder(write_info,image,exception);
-      if (GetMagickEncoderThreadSupport(magick_info) == MagickFalse)
+      if ((magick_info != (const MagickInfo *) NULL) &&
+          (GetMagickEncoderThreadSupport(magick_info) == MagickFalse))
         UnlockSemaphoreInfo(magick_info->semaphore);
     }
   else
@@ -1510,6 +1517,8 @@ MagickExport MagickBooleanType WriteImages(const ImageInfo *image_info,
   write_info=CloneImageInfo(image_info);
   *write_info->magick='\0';
   images=GetFirstImageInList(images);
+  if (images == (Image *) NULL)
+    return(MagickFalse);
   if (filename != (const char *) NULL)
     for (p=images; p != (Image *) NULL; p=GetNextImageInList(p))
       (void) CopyMagickString(p->filename,filename,MagickPathExtent);

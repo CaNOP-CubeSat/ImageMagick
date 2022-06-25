@@ -4458,6 +4458,8 @@ static Image *XGetWindowImage(Display *display,const Window window,
                 composite_image=DestroyImage(composite_image);
                 return((Image *) NULL);
               }
+            if (colors == (XColor *) NULL)
+              break;
             for (i=0; i < (int) composite_image->colors; i++)
             {
               composite_image->colormap[colors[i].pixel].red=(double)
@@ -5443,7 +5445,7 @@ MagickPrivate MagickBooleanType XMakeImage(Display *display,
     format;
 
   size_t
-    length;
+    length = 0;
 
   XImage
     *matte_image,
@@ -5458,7 +5460,6 @@ MagickPrivate MagickBooleanType XMakeImage(Display *display,
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if ((window->width == 0) || (window->height == 0))
     return(MagickFalse);
-  (void) length;
   /*
     Apply user transforms to the image.
   */
@@ -5942,9 +5943,10 @@ static void XMakeImageLSBFirst(const XResourceInfo *resource_info,
       if (pattern != (Image *) NULL)
         {
           canvas=CloneImage(image,0,0,MagickTrue,exception);
-          if (canvas != (Image *) NULL)
-            (void) CompositeImage(canvas,pattern,DstOverCompositeOp,MagickTrue,
-              0,0,exception);
+          if (canvas == (Image *) NULL)
+            return;
+          (void) CompositeImage(canvas,pattern,DstOverCompositeOp,MagickTrue,
+            0,0,exception);
           pattern=DestroyImage(pattern);
         }
     }
@@ -6559,9 +6561,10 @@ static void XMakeImageMSBFirst(const XResourceInfo *resource_info,
       if (pattern != (Image *) NULL)
         {
           canvas=CloneImage(image,0,0,MagickTrue,exception);
-          if (canvas != (Image *) NULL)
-            (void) CompositeImage(canvas,pattern,DstOverCompositeOp,MagickFalse,
-              0,0,exception);
+          if (canvas == (Image *) NULL)
+            return;
+          (void) CompositeImage(canvas,pattern,DstOverCompositeOp,MagickFalse,
+            0,0,exception);
           pattern=DestroyImage(pattern);
         }
     }

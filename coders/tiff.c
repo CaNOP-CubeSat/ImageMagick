@@ -242,6 +242,10 @@ static void InitPSDInfo(const Image *image,PSDInfo *info)
       info->min_channels=info->channels;
       if (image->alpha_trait == BlendPixelTrait)
         info->min_channels--;
+      if (image->colorspace == CMYColorspace)
+        info->min_channels=MagickMin(4,info->min_channels);
+      else
+        info->min_channels=MagickMin(3,info->min_channels);
     }
 }
 #endif
@@ -1899,9 +1903,9 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
         */
         extent=(samples_per_pixel+1)*TIFFStripSize(tiff);
 #if defined(TIFF_VERSION_BIG)
-        extent+=image->columns*sizeof(uint64);
+        extent+=samples_per_pixel*sizeof(uint64);
 #else
-        extent+=image->columns*sizeof(uint32);
+        extent+=samples_per_pixel*sizeof(uint32);
 #endif
         strip_pixels=(unsigned char *) AcquireQuantumMemory(extent,
           sizeof(*strip_pixels));
@@ -1998,11 +2002,12 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
         number_pixels=(MagickSizeType) columns*rows;
         if (HeapOverflowSanityCheck(rows,sizeof(*tile_pixels)) != MagickFalse)
           ThrowTIFFException(ResourceLimitError,"MemoryAllocationFailed");
-        extent=4*MagickMax(rows*TIFFTileRowSize(tiff),TIFFTileSize(tiff));
+        extent=(samples_per_pixel+1)*MagickMax(rows*TIFFTileRowSize(tiff),
+          TIFFTileSize(tiff));
 #if defined(TIFF_VERSION_BIG)
-        extent+=image->columns*sizeof(uint64);
+        extent+=samples_per_pixel*sizeof(uint64);
 #else
-        extent+=image->columns*sizeof(uint32);
+        extent+=samples_per_pixel*sizeof(uint32);
 #endif
         tile_pixels=(unsigned char *) AcquireQuantumMemory(extent,
           sizeof(*tile_pixels));
@@ -2097,9 +2102,9 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
           ThrowTIFFException(ResourceLimitError,"MemoryAllocationFailed");
         number_pixels=(MagickSizeType) image->columns*image->rows;
 #if defined(TIFF_VERSION_BIG)
-        number_pixels+=image->columns*sizeof(uint64);
+        number_pixels+=samples_per_pixel*sizeof(uint64);
 #else
-        number_pixels+=image->columns*sizeof(uint32);
+        number_pixels+=samples_per_pixel*sizeof(uint32);
 #endif
         generic_info=AcquireVirtualMemory(number_pixels,sizeof(uint32));
         if (generic_info == (MemoryInfo *) NULL)
@@ -3450,6 +3455,16 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
             ThrowWriterException(ResourceLimitError,"MemoryAllocationFailed");
           }
       }
+    option=GetImageOption(image_info,"quantum:polarity");
+    if (option == (const char *) NULL)
+      option=GetImageArtifact(image,"tiff:photometric");
+    if (option != (const char *) NULL)
+      {
+        if (LocaleCompare(option,"min-is-black") == 0)
+          SetQuantumMinIsWhite(quantum_info,MagickFalse);
+        if (LocaleCompare(option,"min-is-white") == 0)
+          SetQuantumMinIsWhite(quantum_info,MagickTrue);
+      }
     if ((LocaleCompare(image_info->magick,"PTIF") == 0) &&
         (GetPreviousImageInList(image) != (Image *) NULL))
       (void) TIFFSetField(tiff,TIFFTAG_SUBFILETYPE,FILETYPE_REDUCEDIMAGE);
@@ -3463,17 +3478,11 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
       case FaxCompression:
       {
         compress_tag=COMPRESSION_CCITTFAX3;
-        option=GetImageOption(image_info,"quantum:polarity");
-        if (option == (const char *) NULL)
-          SetQuantumMinIsWhite(quantum_info,MagickTrue);
         break;
       }
       case Group4Compression:
       {
         compress_tag=COMPRESSION_CCITTFAX4;
-        option=GetImageOption(image_info,"quantum:polarity");
-        if (option == (const char *) NULL)
-          SetQuantumMinIsWhite(quantum_info,MagickTrue);
         break;
       }
 #if defined(COMPRESSION_JBIG)
