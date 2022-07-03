@@ -5445,7 +5445,7 @@ MagickPrivate MagickBooleanType XMakeImage(Display *display,
     format;
 
   size_t
-    length = 0;
+    length;
 
   XImage
     *matte_image,

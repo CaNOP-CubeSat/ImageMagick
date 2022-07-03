@@ -738,6 +738,11 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     image->colorspace=(ColorspaceType) colorspace;
                     break;
                   }
+                if (LocaleCompare(keyword,"columns") == 0)
+                  {
+                    image->columns=StringToUnsignedLong(options);
+                    break;
+                  }
                 if (LocaleCompare(keyword,"compression") == 0)
                   {
                     ssize_t
@@ -748,11 +753,6 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     if (compression < 0)
                       break;
                     image->compression=(CompressionType) compression;
-                    break;
-                  }
-                if (LocaleCompare(keyword,"columns") == 0)
-                  {
-                    image->columns=StringToUnsignedLong(options);
                     break;
                   }
                 (void) SetImageProperty(image,keyword,options,exception);
