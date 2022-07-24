@@ -93,6 +93,7 @@
 #include <io.h>
 #define _O_BINARY O_BINARY
 #endif
+
 /*
   Typedef declarations.
 */
@@ -2079,12 +2080,13 @@ MagickExport void *ImageToBlob(const ImageInfo *image_info,
           status=WriteImage(blob_info,image,exception);
           *length=image->blob->length;
           blob=DetachBlob(image->blob);
-          if (blob == (void *) NULL)
-            blob_info->blob=RelinquishMagickMemory(blob_info->blob);
-          else if (status == MagickFalse)
-            blob=RelinquishMagickMemory(blob);
-          else
-            blob=ResizeQuantumMemory(blob,*length+1,sizeof(unsigned char));
+          if (blob != (void *) NULL)
+            {
+              if (status == MagickFalse)
+                blob=RelinquishMagickMemory(blob);
+              else
+                blob=ResizeQuantumMemory(blob,*length+1,sizeof(unsigned char));
+            }
         }
     }
   else
@@ -2429,7 +2431,7 @@ MagickExport void *ImagesToBlob(const ImageInfo *image_info,Image *images,
     *magick_info;
 
   ImageInfo
-    *clone_info;
+    *blob_info;
 
   MagickBooleanType
     status;
@@ -2447,35 +2449,35 @@ MagickExport void *ImagesToBlob(const ImageInfo *image_info,Image *images,
       image_info->filename);
   *length=0;
   blob=(unsigned char *) NULL;
-  clone_info=CloneImageInfo(image_info);
-  (void) SetImageInfo(clone_info,(unsigned int) GetImageListLength(images),
+  blob_info=CloneImageInfo(image_info);
+  (void) SetImageInfo(blob_info,(unsigned int) GetImageListLength(images),
     exception);
-  if (*clone_info->magick != '\0')
-    (void) CopyMagickString(images->magick,clone_info->magick,MagickPathExtent);
+  if (*blob_info->magick != '\0')
+    (void) CopyMagickString(images->magick,blob_info->magick,MagickPathExtent);
   magick_info=GetMagickInfo(images->magick,exception);
   if (magick_info == (const MagickInfo *) NULL)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
         MissingDelegateError,"NoDecodeDelegateForThisImageFormat","`%s'",
         images->magick);
-      clone_info=DestroyImageInfo(clone_info);
+      blob_info=DestroyImageInfo(blob_info);
       return(blob);
     }
   if (GetMagickAdjoin(magick_info) == MagickFalse)
     {
-      clone_info=DestroyImageInfo(clone_info);
+      blob_info=DestroyImageInfo(blob_info);
       return(ImageToBlob(image_info,images,length,exception));
     }
-  (void) CopyMagickString(clone_info->magick,images->magick,MagickPathExtent);
+  (void) CopyMagickString(blob_info->magick,images->magick,MagickPathExtent);
   if (GetMagickBlobSupport(magick_info) != MagickFalse)
     {
       /*
         Native blob support for this images format.
       */
-      clone_info->length=0;
-      clone_info->blob=(void *) AcquireQuantumMemory(MagickMaxBlobExtent,
+      blob_info->length=0;
+      blob_info->blob=(void *) AcquireQuantumMemory(MagickMaxBlobExtent,
         sizeof(unsigned char));
-      if (clone_info->blob == (void *) NULL)
+      if (blob_info->blob == (void *) NULL)
         (void) ThrowMagickException(exception,GetMagickModule(),
           ResourceLimitError,"MemoryAllocationFailed","`%s'",images->filename);
       else
@@ -2483,15 +2485,16 @@ MagickExport void *ImagesToBlob(const ImageInfo *image_info,Image *images,
           (void) CloseBlob(images);
           images->blob->exempt=MagickTrue;
           *images->filename='\0';
-          status=WriteImages(clone_info,images,images->filename,exception);
+          status=WriteImages(blob_info,images,images->filename,exception);
           *length=images->blob->length;
           blob=DetachBlob(images->blob);
-          if (blob == (void *) NULL)
-            clone_info->blob=RelinquishMagickMemory(clone_info->blob);
-          else if (status == MagickFalse)
-            blob=RelinquishMagickMemory(blob);
-          else
-            blob=ResizeQuantumMemory(blob,*length+1,sizeof(unsigned char));
+          if (blob != (void *) NULL)
+            {
+              if (status == MagickFalse)
+                blob=RelinquishMagickMemory(blob);
+              else
+                blob=ResizeQuantumMemory(blob,*length+1,sizeof(unsigned char));
+            }
         }
     }
   else
@@ -2514,21 +2517,21 @@ MagickExport void *ImagesToBlob(const ImageInfo *image_info,Image *images,
         }
       else
         {
-          clone_info->file=fdopen(file,"wb");
-          if (clone_info->file != (FILE *) NULL)
+          blob_info->file=fdopen(file,"wb");
+          if (blob_info->file != (FILE *) NULL)
             {
               (void) FormatLocaleString(filename,MagickPathExtent,"%s:%s",
                 images->magick,unique);
-              status=WriteImages(clone_info,images,filename,exception);
+              status=WriteImages(blob_info,images,filename,exception);
               (void) CloseBlob(images);
-              (void) fclose(clone_info->file);
+              (void) fclose(blob_info->file);
               if (status != MagickFalse)
                 blob=FileToBlob(unique,~0UL,length,exception);
             }
           (void) RelinquishUniqueFileResource(unique);
         }
     }
-  clone_info=DestroyImageInfo(clone_info);
+  blob_info=DestroyImageInfo(blob_info);
   return(blob);
 }
 
@@ -3329,7 +3332,7 @@ MagickExport MagickBooleanType OpenBlob(const ImageInfo *image_info,
       char
         fileMode[2];
 
-      *fileMode =(*type);
+      *fileMode=(*type);
       fileMode[1]='\0';
       blob_info->file_info.file=fdopen(StringToLong(filename+3),fileMode);
       if (blob_info->file_info.file == (FILE *) NULL)
@@ -3359,7 +3362,7 @@ MagickExport MagickBooleanType OpenBlob(const ImageInfo *image_info,
       if (*type == 'w')
         (void) signal(SIGPIPE,SIG_IGN);
 #endif
-      *fileMode =(*type);
+      *fileMode=(*type);
       fileMode[1]='\0';
       sanitize_command=SanitizeString(filename+1);
       blob_info->file_info.file=(FILE *) popen_utf8(sanitize_command,fileMode);
@@ -3557,7 +3560,7 @@ MagickExport MagickBooleanType OpenBlob(const ImageInfo *image_info,
               }
           }
   blob_info->status=MagickFalse;
-  blob_info->error_number=MagickFalse;
+  blob_info->error_number=0;
   if (blob_info->type != UndefinedStream)
     blob_info->size=GetBlobSize(image);
   else
